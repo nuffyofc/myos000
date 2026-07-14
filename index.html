@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Mike OS — Task Time Tracker</title>
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="dark light">
 <meta name="theme-color" content="#08080a">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
 <style>
@@ -19,6 +19,25 @@
     --mono:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,monospace;
     --bottom-nav-h:72px;
   }
+  [data-theme="light"]{
+    --bg:#f5f5f0; --surface:#ffffff; --surface2:#f0f0ec; --surface3:#e6e6e0;
+    --border:#d4d4d0; --border2:#b0b0a8;
+    --text:#1a1a1a; --text2:#555550; --text3:#888880;
+    --accent:#7bbd1a; --accent2:#9fdb3a; --accent-dim:rgba(123,189,26,0.12);
+    --red:#dc2626; --yellow:#ca8a04; --blue:#2563eb; --purple:#7c3aed; --teal:#0d9488;
+    --shadow:0 8px 28px rgba(0,0,0,0.08);
+  }
+  [data-theme="light"] .mobile-nav{background:rgba(255,255,255,0.96)}
+  [data-theme="light"] .chart-row{border-bottom:1px dashed rgba(0,0,0,0.07)}
+  [data-theme="light"] .chart-track{background:var(--surface3)}
+  [data-theme="light"] .progress-track{background:var(--surface3)}
+  [data-theme="light"] .task-item.active{background:rgba(123,189,26,0.08)}
+  [data-theme="light"] .block.done{background:rgba(123,189,26,0.06)}
+  [data-theme="light"] .task-item.done{opacity:0.5}
+  [data-theme="light"] .modal{background:rgba(0,0,0,0.35)}
+  [data-theme="light"] .nav-footer{background:var(--surface3)}
+  [data-theme="light"] .pill.live{border-color:rgba(123,189,26,0.5)}
+  [data-theme="light"] main{background:radial-gradient(900px 500px at 18% -10%, rgba(123,189,26,0.07), transparent 60%), var(--bg)}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);min-height:100%;overflow-x:hidden}
   body{display:flex;flex-direction:column;min-height:100dvh}
@@ -170,6 +189,7 @@
   <div class="header-actions">
     <div class="pill" id="clock">--:--</div>
     <div class="pill live" id="streak">🔥 0</div>
+    <button class="btn small" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
     <button class="btn small" onclick="exportData()">Export</button>
     <button class="btn small primary" onclick="enterFocus()">Focus</button>
   </div>
@@ -429,7 +449,17 @@ const blocksDef = [
   {id:'shutdown', time:'18:30-19:00', title:'SHUTDOWN', meta:'Plan tomorrow tasks'},
 ];
 
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme==='light'?'🌙':'☀️';
+  localStorage.setItem('mikeos_theme', theme);
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  applyTheme(cur==='light'?'dark':'light');
+}
 function init(){
+  applyTheme(localStorage.getItem('mikeos_theme')||'dark');
   document.getElementById('todayStr').textContent = new Date().toLocaleDateString('en-SI',{weekday:'long', day:'numeric', month:'long'});
   renderBlocks(); loadDay(); renderInbox(); renderICE(); renderWeekly();
   clockTick(); setInterval(clockTick,1000);
