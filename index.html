@@ -38,6 +38,19 @@
   [data-theme="light"] .nav-footer{background:var(--surface3)}
   [data-theme="light"] .pill.live{border-color:rgba(123,189,26,0.5)}
   [data-theme="light"] main{background:radial-gradient(900px 500px at 18% -10%, rgba(123,189,26,0.07), transparent 60%), var(--bg)}
+  /* Timeline */
+  .tl-track{position:absolute;left:0;right:0;top:50px;height:60px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)}
+  .tl-marker{position:absolute;top:48px;transform:translateX(-50%);font-family:var(--mono);font-size:9.5px;color:var(--text3);white-space:nowrap;z-index:2}
+  .tl-marker::before{content:'';position:absolute;top:12px;left:50%;width:1px;height:8px;background:var(--border2)}
+  .tl-block{position:absolute;top:52px;height:54px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:650;color:#000;overflow:hidden;cursor:pointer;transition:opacity .15s;min-width:4px;z-index:3}
+  .tl-block:hover{opacity:0.85;z-index:5}
+  .tl-block.done{opacity:0.6}
+  .tl-block.done::after{content:'✓';position:absolute;top:2px;right:4px;font-size:9px;opacity:0.7}
+  .tl-block .tl-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 6px;font-size:10px;line-height:1.1;text-align:center;max-width:100%;pointer-events:none}
+  .tl-now{position:absolute;top:48px;width:2px;background:var(--red);z-index:6;pointer-events:none;opacity:0.7}
+  .tl-now::before{content:'';position:absolute;top:-4px;left:-4px;width:10px;height:10px;border-radius:50%;background:var(--red)}
+  .tl-slot{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:12.5px}
+  .tl-slot .cat-dot{width:8px;height:8px}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);min-height:100%;overflow-x:hidden}
   body{display:flex;flex-direction:column;min-height:100dvh}
@@ -205,6 +218,7 @@
     <div class="nav-item" data-view="timer"><span class="ico">⏱️</span> Sprint Timer</div>
     <div class="nav-item" data-view="inbox"><span class="ico">📥</span> Inbox & Ideas</div>
     <div class="nav-item" data-view="weekly"><span class="ico">📊</span> Weekly Graphs</div>
+    <div class="nav-item" data-view="timeline"><span class="ico">⏳</span> Day Timeline</div>
     <div class="nav-item" data-view="science"><span class="ico">🧬</span> The Science</div>
     <div class="nav-label">Protocols</div>
     <div class="nav-item" onclick="showShutdown()"><span class="ico">🌙</span> Shutdown Ritual</div>
@@ -389,6 +403,28 @@
       <div class="card" style="margin-top:14px"><div class="card-title">Weekly Review</div><textarea id="weeklyReview" placeholder="What produced €? What drained? What to cut? Top ICE?" style="margin-top:10px;min-height:110px" oninput="saveSettings()"></textarea></div>
     </div>
 
+    <!-- TIMELINE -->
+    <div class="view" id="view-timeline">
+      <div class="page-head">
+        <div><h1>Day Timeline</h1><p>Your time chunks mapped from 00:00 to midnight</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill" id="tlTotalPill">0m tracked</span>
+          <span class="pill" id="tlTasksPill">0 tasks</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Today's Timeline</span><span class="card-sub">tasks positioned by creation time, width = time spent</span></div>
+        <div id="timelineWrap" style="overflow-x:auto;padding:8px 0">
+          <div id="timeline" style="position:relative;height:140px;min-width:720px"></div>
+        </div>
+        <div id="tlLegend" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:12px"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><span class="card-title">Task Log — Today</span><span class="card-sub">all chunks in order</span></div>
+        <div id="tlTaskList" class="grid" style="gap:6px;margin-top:8px"></div>
+      </div>
+    </div>
+
     <!-- SCIENCE -->
     <div class="view" id="view-science">
       <div class="card"><h2 style="margin:0;font-size:22px">The Science</h2><p style="color:var(--text2);font-size:13px;line-height:1.6">Time chunking + task tracking = attention residue reduction (Leroy 2009) + ultradian rhythm alignment (Kleitman 1963). Tracking per task makes deep work visible.</p>
@@ -405,6 +441,7 @@
       <div class="mnav-item" data-view="timer"><span class="mnav-ico">⏱️</span><span class="mnav-label">Timer</span></div>
       <div class="mnav-item" data-view="inbox"><span class="mnav-ico">📥</span><span class="mnav-label">Inbox</span></div>
       <div class="mnav-item" data-view="weekly"><span class="mnav-ico">📊</span><span class="mnav-label">Week</span></div>
+      <div class="mnav-item" data-view="timeline"><span class="mnav-ico">⏳</span><span class="mnav-label">Timeline</span></div>
       <div class="mnav-item" data-view="science"><span class="mnav-ico">🧬</span><span class="mnav-label">Info</span></div>
     </div>
   </div>
@@ -489,6 +526,7 @@ function switchView(view){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-'+view).classList.add('active');
   if(view==='weekly') renderWeekly();
+  if(view==='timeline') renderTimeline();
   document.querySelector('main').scrollTo(0,0);
 }
 function toggleNav(){ const sb=document.getElementById('sidebar'); sb.classList.toggle('open'); document.getElementById('overlay').classList.toggle('show', sb.classList.contains('open')); }
@@ -752,6 +790,51 @@ function launchConfetti(){
   const c=document.getElementById('confetti'); c.style.display='block'; const ctx=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight;
   const particles=[]; for(let i=0;i<100;i++) particles.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*12,vy:(Math.random()-0.5)*12-3,r:Math.random()*5+2,color:`hsl(${80+Math.random()*40},100%,60%)`});
   let f=0; (function draw(){ if(f++>110){ c.style.display='none'; return; } ctx.clearRect(0,0,c.width,c.height); particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.26; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); }); requestAnimationFrame(draw); })();
+}
+function renderTimeline(){
+  const d=getToday(); const tasks=d.tasks||[];
+  const totalMins=tasks.reduce((a,b)=>a+(b.spent||0),0);
+  document.getElementById('tlTotalPill').textContent=`${Math.round(totalMins)}m tracked`;
+  document.getElementById('tlTasksPill').textContent=`${tasks.length} tasks`;
+  // Legend
+  const usedCats=new Set(tasks.map(t=>t.category));
+  document.getElementById('tlLegend').innerHTML=Object.entries(CATEGORIES).filter(([k])=>usedCats.has(k)).map(([k,v])=>`<span><span class="cat-dot" style="background:${v.color}"></span>${v.name}</span>`).join('');
+  // Timeline
+  const el=document.getElementById('timeline');
+  const W=el.clientWidth||720;
+  const HOUR_W=W/24;
+  // Markers every 2h
+  let html='<div class="tl-track"></div>';
+  for(let h=0;h<=24;h+=2){
+    const left=(h/24)*100;
+    html+=`<div class="tl-marker" style="left:${left}%">${String(h).padStart(2,'0')}:00</div>`;
+  }
+  // Task blocks
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const sorted=[...tasks].sort((a,b)=>a.created-b.created);
+  sorted.forEach(t=>{
+    const created=new Date(t.created);
+    const startMin=created.getHours()*60+created.getMinutes();
+    const dur=Math.max(4,t.spent||Math.round(t.planned/2));
+    const leftPct=(startMin/(24*60))*100;
+    const widthPct=Math.min((dur/(24*60))*100, (24*60-startMin)/(24*60)*100);
+    if(leftPct>100) return;
+    const cat=CATEGORIES[t.category]||CATEGORIES.deep;
+    const doneCls=t.done?'done':'';
+    html+=`<div class="tl-block ${doneCls}" style="left:${leftPct}%;width:${Math.max(0.5,widthPct)}%;background:${cat.color}" title="${t.name} — ${Math.round(t.spent||0)}m / ${t.planned}m"><span class="tl-label">${t.name}</span></div>`;
+  });
+  // Now indicator
+  const nowPct=(nowMin/(24*60))*100;
+  if(nowPct>=0&&nowPct<=100) html+=`<div class="tl-now" style="left:${nowPct}%"></div>`;
+  el.innerHTML=html;
+  // Task list log
+  document.getElementById('tlTaskList').innerHTML=sorted.map(t=>{
+    const created=new Date(t.created);
+    const timeStr=created.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+    const cat=CATEGORIES[t.category]||CATEGORIES.deep;
+    return `<div class="tl-slot ${t.done?'done':''}"><span class="cat-dot" style="background:${cat.color}"></span><span style="font-family:var(--mono);font-size:11px;color:var(--text3);min-width:42px">${timeStr}</span><span style="flex:1;font-weight:600">${t.name}</span><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">${Math.round(t.spent||0)}m / ${t.planned}m</span>${t.done?'<span style="color:var(--accent)">✓</span>':''}</div>`;
+  }).join('')||'<div style="color:var(--text3);font-size:13px;padding:12px;text-align:center">No tasks today. Create time chunks in Today.</div>';
 }
 window.onload=init;
 </script>
