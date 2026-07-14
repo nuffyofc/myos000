@@ -191,6 +191,8 @@
     <div class="pill live" id="streak">🔥 0</div>
     <button class="btn small" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
     <button class="btn small" onclick="exportData()">Export</button>
+    <button class="btn small" onclick="document.getElementById('importInput').click()">Import</button>
+    <input type="file" id="importInput" accept=".json" style="display:none" onchange="importData(event)">
     <button class="btn small primary" onclick="enterFocus()">Focus</button>
   </div>
 </header>
@@ -731,7 +733,21 @@ function clearWeek(){ if(confirm('Delete ALL local data? Export first!')){ local
 function saveSettings(){ data.settings.weeklyReview=document.getElementById('weeklyReview').value; saveStore(); }
 function showShutdown(){ document.getElementById('shutdownModal').classList.add('active'); }
 function completeShutdown(){ document.getElementById('shutdownModal').classList.remove('active'); const d=getToday(); d.blocks.shutdown=true; saveStore(); renderBlocks(); launchConfetti(); }
-function exportData(){ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`mike-os-${todayKey()}.json`; a.click(); URL.revokeObjectURL(url); }
+function exportData(){ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`winner-os-${todayKey()}.json`; a.click(); URL.revokeObjectURL(url); }
+function importData(e){
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const imported=JSON.parse(ev.target.result);
+      if(!imported.days||typeof imported.days!=='object') throw new Error('Invalid format');
+      if(!confirm(`Import ${Object.keys(imported.days).length} days of data? Current data will be replaced.`)) return;
+      data=imported; saveStore(); location.reload();
+    }catch(err){ alert('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
 function launchConfetti(){
   const c=document.getElementById('confetti'); c.style.display='block'; const ctx=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight;
   const particles=[]; for(let i=0;i<100;i++) particles.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*12,vy:(Math.random()-0.5)*12-3,r:Math.random()*5+2,color:`hsl(${80+Math.random()*40},100%,60%)`});
