@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mike OS — Task Time Tracker</title>
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#08080a">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<style>
+  :root{
+    --bg:#08080a; --surface:#121214; --surface2:#1a1a1e; --surface3:#232326;
+    --border:#26262a; --border2:#3f3f46;
+    --text:#fafafa; --text2:#a1a1aa; --text3:#6b7280;
+    --accent:#a3e635; --accent2:#bef264; --accent-dim:rgba(163,230,53,0.14);
+    --red:#f87171; --yellow:#facc15; --blue:#60a5fa; --purple:#a78bfa; --teal:#2dd4bf;
+    --radius:14px; --shadow:0 8px 28px rgba(0,0,0,0.55);
+    --font:-apple-system,BlinkMacSystemFont,"Inter","SF Pro Display","Segoe UI",Roboto,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"JetBrains Mono",Menlo,monospace;
+    --bottom-nav-h:72px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font);min-height:100%;overflow-x:hidden}
+  body{display:flex;flex-direction:column;min-height:100dvh}
+  ::-webkit-scrollbar{width:5px;height:5px}
+  ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+  header{height:56px;min-height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30}
+  .left-head{display:flex;align-items:center;gap:12px}
+  .menu-btn{width:36px;height:36px;display:none;place-items:center;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-0.03em;font-size:15px}
+  .logo-mark{width:30px;height:30px;background:var(--accent);color:#000;display:grid;place-items:center;border-radius:8px;font-family:var(--mono);font-weight:900}
+  .logo small{font-weight:600;color:var(--text3);font-size:10px;font-family:var(--mono);letter-spacing:0.08em}
+  .header-actions{display:flex;gap:8px;align-items:center}
+  .pill{font-size:10.5px;font-family:var(--mono);padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);white-space:nowrap}
+  .pill.live{border-color:rgba(163,230,53,0.4);color:var(--accent);background:var(--accent-dim)}
+  .btn{appearance:none;border:1px solid var(--border);background:var(--surface2);color:var(--text);padding:9px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;white-space:nowrap}
+  .btn:hover{background:var(--surface3)}
+  .btn.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:750}
+  .btn.small{padding:7px 11px;font-size:12.5px;min-height:34px}
+  .btn.ghost{background:transparent}
+  .app{display:flex;flex:1;min-height:0;position:relative}
+  nav{width:250px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 12px;gap:16px;flex-shrink:0;overflow:auto}
+  .nav-label{font-size:10px;font-family:var(--mono);color:var(--text3);letter-spacing:0.13em;text-transform:uppercase;padding:8px 10px 4px}
+  .nav-item{padding:11px 11px;border-radius:11px;display:flex;align-items:center;gap:11px;font-size:13.5px;font-weight:520;color:var(--text2);cursor:pointer;border:1px solid transparent;min-height:42px}
+  .nav-item.active{background:var(--surface3);color:var(--text);border-color:var(--border)}
+  .nav-item .ico{font-size:15px;width:20px;text-align:center}
+  .nav-item .dot{width:7px;height:7px;border-radius:50%;background:var(--border2);margin-left:auto}
+  .nav-item.active .dot{background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .nav-footer{margin-top:auto;padding:12px;background:var(--surface2);border-radius:12px;border:1px solid var(--border);line-height:1.45}
+  .nav-footer p{margin:0;font-size:11.5px;color:var(--text3)}
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);z-index:35}
+  .overlay.show{display:block}
+  main{flex:1;overflow:auto;padding:22px 22px calc(var(--bottom-nav-h) + 22px);background:radial-gradient(900px 500px at 18% -10%, rgba(163,230,53,0.09), transparent 60%), var(--bg);min-width:0}
+  .view{display:none;max-width:1120px;margin:0 auto;animation:fadeIn .22s ease}
+  .view.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .grid{display:grid;gap:14px}
+  .grid-2{grid-template-columns:1fr 1fr}
+  .grid-3{grid-template-columns:1fr 1fr 1fr}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);min-width:0}
+  .card-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .card-title{font-size:11.5px;font-family:var(--mono);letter-spacing:0.07em;text-transform:uppercase;color:var(--text2);font-weight:700}
+  .card-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .page-head h1{margin:0;font-size:clamp(22px,3vw,28px);letter-spacing:-0.03em;font-weight:850;line-height:1.1}
+  .page-head p{margin:6px 0 0;color:var(--text2);font-size:13px;line-height:1.4}
+  input,textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:10px;font-size:14px;outline:none;transition:.15s;min-height:42px}
+  input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+  textarea{resize:vertical;min-height:76px}
+  label{font-size:11.5px;color:var(--text2);display:block;margin-bottom:6px;font-weight:600}
+  /* Task creator */
+  .creator{padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;display:grid;gap:12px}
+  .creator-top{display:grid;grid-template-columns:1.6fr 0.9fr 0.6fr auto;gap:10px;align-items:end}
+  .preset-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .preset{padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface3);font-family:var(--mono);font-size:12px;cursor:pointer;color:var(--text2);min-height:32px}
+  .preset.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
+  .cat-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  /* Task list */
+  .task-item{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:12px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;transition:.15s;min-width:0}
+  .task-item.active{border-color:var(--accent);background:rgba(163,230,53,0.07);box-shadow:0 0 0 3px var(--accent-dim)}
+  .task-item.done{opacity:0.6}
+  .task-check{width:26px;height:26px;border-radius:8px;border:1.6px solid var(--border2);background:var(--surface);display:grid;place-items:center;cursor:pointer;font-size:12px}
+  .task-item.done .task-check{background:var(--accent);border-color:var(--accent);color:#000}
+  .task-main{min-width:0}
+  .task-name{font-size:13.5px;font-weight:600;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .task-meta{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .task-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .progress-track{height:6px;background:var(--surface3);border-radius:999px;overflow:hidden;margin-top:8px;border:1px solid var(--border)}
+  .progress-fill{height:100%;transition:width .4s ease;border-radius:999px}
+  /* Charts */
+  .chart-row{display:grid;grid-template-columns:130px 1fr 48px;gap:10px;align-items:center;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,0.06)}
+  .chart-row:last-child{border-bottom:0}
+  .chart-label{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+  .chart-track{height:10px;background:var(--surface3);border-radius:999px;overflow:hidden;border:1px solid var(--border);position:relative}
+  .chart-fill{height:100%;border-radius:999px;transition:width .6s cubic-bezier(.32,.72,0,1)}
+  .chart-val{font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+  .stat-kpis{display:flex;gap:12px;flex-wrap:wrap}
+  .stat-kpis .kpi{flex:1;min-width:90px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px}
+  .kpi-val{font-size:22px;font-weight:850;letter-spacing:-0.02em}
+  .kpi-lab{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-top:4px}
+  /* Blocks */
+  .block{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px}
+  .block.done{background:rgba(163,230,53,0.07);border-color:rgba(163,230,53,0.28)}
+  .block.done .block-title{text-decoration:line-through;color:var(--text3)}
+  .block-check{width:26px;height:26px;border-radius:8px;border:1.6px solid var(--border2);background:var(--surface);display:grid;place-items:center;cursor:pointer}
+  .block.done .block-check{background:var(--accent);border-color:var(--accent);color:#000}
+  .block-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .block-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+  .block-time{font-family:var(--mono);font-size:11px;color:var(--text3);background:var(--surface3);padding:5px 8px;border-radius:7px;border:1px solid var(--border)}
+  /* Timer */
+  .timer-card{text-align:center;padding:22px 18px;background:linear-gradient(180deg, var(--surface2), var(--surface));border:1px solid var(--border)}
+  .timer-display{font-family:var(--mono);font-size:clamp(48px,14vw,84px);font-weight:860;letter-spacing:-0.05em;line-height:0.95;margin:12px 0}
+  .timer-label{font-family:var(--mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3)}
+  .timer-progress{height:6px;background:var(--surface3);border-radius:999px;overflow:hidden;margin:16px 0;border:1px solid var(--border)}
+  .timer-bar{height:100%;background:var(--accent);width:0%;transition:width 1s linear}
+  .timer-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+  /* inbox */
+  .inbox-item{display:flex;gap:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+  .inbox-item.done{opacity:0.55}
+  .ice-grid{display:grid;grid-template-columns:1fr 64px 64px 64px 64px;gap:8px;align-items:end}
+  /* table */
+  .table-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px;min-width:620px}
+  th{text-align:left;padding:10px 12px;color:var(--text3);font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;background:var(--surface2);position:sticky;top:0}
+  td{padding:10px 12px;border-top:1px solid var(--border);vertical-align:top}
+  /* Mobile nav */
+  .mobile-nav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(18,18,20,0.96);backdrop-filter:blur(16px);border-top:1px solid var(--border);padding:6px 4px calc(6px + env(safe-area-inset-bottom));height:var(--bottom-nav-h)}
+  .mobile-nav-inner{display:flex;justify-content:space-around;align-items:center;height:100%;max-width:600px;margin:0 auto;width:100%}
+  .mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 2px;border-radius:12px;color:var(--text3);cursor:pointer;min-height:48px;border:1px solid transparent}
+  .mnav-item.active{background:var(--surface3);color:var(--text);border-color:var(--border)}
+  .mnav-ico{font-size:18px;line-height:1}
+  .mnav-label{font-size:9.5px;font-family:var(--mono);text-transform:uppercase;font-weight:650}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,0.72);backdrop-filter:blur(10px);display:none;place-items:center;z-index:60;padding:16px}
+  .modal.active{display:grid}
+  .modal-card{max-width:480px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;box-shadow:var(--shadow);max-height:90dvh;overflow:auto}
+  .confetti{position:fixed;pointer-events:none;top:0;left:0;width:100%;height:100%;z-index:70;display:none}
+  @media(max-width:1100px){.grid-3{grid-template-columns:1fr 1fr}}
+  @media(max-width:900px){
+    .menu-btn{display:grid}
+    nav{position:fixed;left:0;top:0;bottom:0;z-index:45;width:300px;max-width:86vw;transform:translateX(-100%);transition:transform .28s cubic-bezier(.32,.72,0,1);box-shadow:20px 0 60px rgba(0,0,0,0.6)}
+    nav.open{transform:translateX(0)}
+    .mobile-nav{display:block}
+    main{padding:14px 12px calc(var(--bottom-nav-h) + 18px + env(safe-area-inset-bottom))}
+    .grid-3,.grid-2{grid-template-columns:1fr}
+    .creator-top{grid-template-columns:1fr 1fr;gap:10px}
+    .creator-top > div:first-child{grid-column:1 / -1}
+    .ice-grid{grid-template-columns:1fr 1fr 1fr 1fr}
+    .ice-grid > div:first-child{grid-column:1 / -1}
+  }
+  @media(max-width:600px){
+    header{padding:0 12px}
+    .logo small{display:none}
+    .task-item{grid-template-columns:28px 1fr;gap:8px}
+    .task-actions{grid-column:1 / -1;justify-content:flex-start;margin-top:4px}
+    .chart-row{grid-template-columns:90px 1fr 40px}
+    .block{grid-template-columns:28px 1fr}
+    .block-time{grid-column:2;justify-self:start}
+    .modal{padding:0;align-items:end}
+    .modal-card{border-radius:20px 20px 0 0;max-width:100%;max-height:92dvh}
+    input,textarea,select{font-size:16px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="left-head">
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+    <div class="logo"><div class="logo-mark">M</div> Mike OS <small>TASK • v2.0</small></div>
+  </div>
+  <div class="header-actions">
+    <div class="pill" id="clock">--:--</div>
+    <div class="pill live" id="streak">🔥 0</div>
+    <button class="btn small" onclick="exportData()">Export</button>
+    <button class="btn small primary" onclick="enterFocus()">Focus</button>
+  </div>
+</header>
+<div class="overlay" id="overlay" onclick="closeNav()"></div>
+
+<div class="app">
+  <nav id="sidebar">
+    <div class="nav-label">Operate</div>
+    <div class="nav-item active" data-view="today"><span class="ico">📅</span> Today — Tasks <div class="dot" style="margin-left:auto"></div></div>
+    <div class="nav-item" data-view="timer"><span class="ico">⏱️</span> Sprint Timer</div>
+    <div class="nav-item" data-view="inbox"><span class="ico">📥</span> Inbox & Ideas</div>
+    <div class="nav-item" data-view="weekly"><span class="ico">📊</span> Weekly Graphs</div>
+    <div class="nav-item" data-view="science"><span class="ico">🧬</span> The Science</div>
+    <div class="nav-label">Protocols</div>
+    <div class="nav-item" onclick="showShutdown()"><span class="ico">🌙</span> Shutdown Ritual</div>
+    <div class="nav-item" onclick="exportData()"><span class="ico">💾</span> Export JSON</div>
+    <div class="nav-footer">
+      <p><b>Rule:</b> One task = one time chunk. Track time per task & category. <span style="color:var(--accent)">Time × Intensity = Output.</span></p>
+      <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"><span class="pill" style="font-size:10px">Time Chunking</span><span class="pill" style="font-size:10px">Offline</span></div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- TODAY -->
+    <div class="view active" id="view-today">
+      <div class="page-head">
+        <div><h1>Today, <span id="todayStr"></span></h1><p>Nova Gorica • Task chunking system • Track real time per task & category</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="pill" id="deepPill" style="background:var(--accent-dim);color:var(--accent);border-color:rgba(163,230,53,0.3)">0 / 3 sprints</span>
+          <span class="pill" id="todayTotalPill">0m tracked</span>
+          <span class="pill" id="moneyPill">€0 spent</span>
+        </div>
+      </div>
+
+      <!-- Creator -->
+      <div class="card">
+        <div class="card-header"><span class="card-title">Create Time Chunk — Task Tracking</span><span class="card-sub">name + category + pom preset</span></div>
+        <div class="creator">
+          <div class="creator-top">
+            <div><label>Task Name</label><input id="taskName" placeholder="e.g. Build auth flow, Write landing copy, Roast outreach"></div>
+            <div><label>Category</label>
+              <select id="taskCategory">
+                <option value="deep">🟢 Deep Build</option>
+                <option value="distribution">🔵 Distribution / Marketing</option>
+                <option value="bugfix">🔴 Bug Fix</option>
+                <option value="shallow">🟡 Shallow Admin</option>
+                <option value="learning">🟣 Learning / Research</option>
+                <option value="life">🟢 Life / Recovery</option>
+              </select>
+            </div>
+            <div><label>Planned Minutes</label><input id="taskPlanned" type="number" value="25" min="5" step="5" inputmode="numeric"></div>
+            <div><label>&nbsp;</label><button class="btn primary" style="width:100%;min-height:42px" onclick="addTask()">+ Add Task</button></div>
+          </div>
+          <div>
+            <label>Pom Presets</label>
+            <div class="preset-row" id="presetRow">
+              <button class="preset" data-m="15" onclick="setPreset(15)">15m Quick</button>
+              <button class="preset active" data-m="25" onclick="setPreset(25)">25m Pomodoro</button>
+              <button class="preset" data-m="50" onclick="setPreset(50)">50m Deep</button>
+              <button class="preset" data-m="90" onclick="setPreset(90)">90m Sprint</button>
+              <button class="preset" data-m="120" onclick="setPreset(120)">120m Ultra</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Today's Tasks — Time Chunks</span><span class="card-sub" id="taskCount">0 tasks</span></div>
+          <div id="taskList" class="grid" style="gap:8px"></div>
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="btn small ghost" onclick="clearDoneTasks()">Clear Done</button>
+            <button class="btn small ghost" onclick="resetTodayTasks()">Reset All Time Today</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">Dashboard — Time Used Today</span><span class="card-sub">graphs per task & per category</span></div>
+          <div class="stat-kpis" style="margin-bottom:14px">
+            <div class="kpi"><div class="kpi-val" id="kpiTotal">0m</div><div class="kpi-lab">Total Tracked</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiDeep">0m</div><div class="kpi-lab">Deep Hours</div></div>
+            <div class="kpi"><div class="kpi-val" id="kpiRemaining">0m</div><div class="kpi-lab">Planned Left</div></div>
+          </div>
+          <div style="margin-bottom:16px">
+            <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--text3);letter-spacing:0.08em;margin-bottom:8px">By Category — Time Today</div>
+            <div id="catChart" class="grid" style="gap:2px"></div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;color:var(--text3);letter-spacing:0.08em;margin-bottom:8px">By Task — Spent vs Planned</div>
+            <div id="taskChart" class="grid" style="gap:2px"></div>
+          </div>
+          <div style="margin-top:14px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;font-size:11.5px;color:var(--text3);line-height:1.5">
+            Tip: Each chunk = one timer run. Click ▶ on a task to start its timer. Graph updates live while timer runs. Plan 90m for deep, 25m for shallow.
+          </div>
+        </div>
+      </div>
+
+      <div style="height:14px"></div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Daily OS — Time Chunks Template</span><span class="card-sub">map tasks to these</span></div>
+          <div class="grid" id="blocks" style="gap:8px"></div>
+        </div>
+        <div class="grid" style="gap:14px">
+          <div class="card">
+            <div class="card-header"><span class="card-title">3 MITs + Money</span><span class="card-sub">most important</span></div>
+            <div style="display:grid;gap:8px">
+              <div class="grid" style="gap:8px">
+                <input id="mit1" placeholder="MIT 1: e.g. Finish auth + ship" oninput="saveDay()">
+                <input id="mit2" placeholder="MIT 2: e.g. 1 distribution post" oninput="saveDay()">
+                <input id="mit3" placeholder="MIT 3: e.g. Gym" oninput="saveDay()">
+              </div>
+              <div class="grid grid-2" style="gap:8px">
+                <input id="moneySpent" type="number" placeholder="€ Spent today" step="0.5" inputmode="decimal" oninput="saveDay()">
+                <input id="mrr" type="number" placeholder="MRR / Earned" step="1" inputmode="decimal" oninput="saveDay()">
+              </div>
+              <textarea id="win" placeholder="🏆 One win shipped today..." oninput="saveDay()"></textarea>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Quick Capture</span><span class="card-sub">Ctrl+K</span></div>
+            <div style="display:flex;gap:8px;margin-bottom:10px"><input id="quickCapture" placeholder="Brain dump... Enter to add" onkeydown="if(event.key==='Enter')addQuick()"><button class="btn small primary" onclick="addQuick()">Add</button></div>
+            <div id="quickList" style="max-height:200px;overflow:auto" class="grid"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMER -->
+    <div class="view" id="view-timer">
+      <div class="timer-card card">
+        <div class="timer-label" id="timerLabel">Ready — Select a task</div>
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;min-height:20px"><span id="timerTask">No task — create one in Today</span></div>
+        <div class="timer-progress"><div class="timer-bar" id="timerBar"></div></div>
+        <div class="timer-actions">
+          <button class="btn primary" onclick="startTimerFromActive()">▶ Start Task Timer</button>
+          <button class="btn" onclick="startSprint(20)">☕ 20m Break</button>
+          <button class="btn ghost" onclick="pauseTimer()">⏸ Pause</button>
+          <button class="btn ghost" onclick="resetTimer()">Reset</button>
+        </div>
+        <div style="margin-top:18px;display:flex;justify-content:center;gap:20px;flex-wrap:wrap">
+          <div><div class="kpi-val" id="timerSprints">0</div><div class="kpi-lab" style="font-family:var(--mono);font-size:10px;color:var(--text3)">Sprints</div></div>
+          <div><div class="kpi-val" id="timerDeepH">0h</div><div class="kpi-lab" style="font-family:var(--mono);font-size:10px;color:var(--text3)">Total Today</div></div>
+          <div><div class="kpi-val" id="timerState">IDLE</div><div class="kpi-lab" style="font-family:var(--mono);font-size:10px;color:var(--text3)">State</div></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><span class="card-title">Active Task</span><span class="card-sub" id="activeTaskSub">none selected</span></div>
+        <div id="activeTaskCard"><div style="color:var(--text3);font-size:13px;padding:8px">Select a task from Today → ▶ to track time toward it. Timer will add time to that task's spent counter and dashboard graphs live.</div></div>
+      </div>
+    </div>
+
+    <!-- INBOX -->
+    <div class="view" id="view-inbox">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Inbox</span><span class="card-sub" id="inboxCount">0 open</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><input id="inboxInput" placeholder="Bug, feature, idea..." style="flex:1;min-width:160px"><select id="inboxType" style="width:120px"><option value="task">Task</option><option value="idea">App Idea</option><option value="bug">Bug</option><option value="fear">Thought</option></select><button class="btn primary small" onclick="addInbox()">Add</button></div>
+          <div id="inboxList" class="grid"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">ICE Scoring</span><span class="card-sub">Impact×Conf×Ease/10</span></div>
+          <div class="ice-grid" style="margin-bottom:12px">
+            <div><label>App Name</label><input id="iceName" placeholder="e.g. Resume Parser"></div>
+            <div><label>Impact</label><input id="iceI" type="number" min="1" max="10" value="5"></div>
+            <div><label>Conf</label><input id="iceC" type="number" min="1" max="10" value="5"></div>
+            <div><label>Ease</label><input id="iceE" type="number" min="1" max="10" value="5"></div>
+            <div><label>&nbsp;</label><button class="btn primary small" style="width:100%;min-height:42px" onclick="addICE()">Add</button></div>
+          </div>
+          <div id="iceList" class="grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WEEKLY -->
+    <div class="view" id="view-weekly">
+      <div class="grid grid-3">
+        <div class="card"><div class="kpi-val" id="wTotal">0m</div><div class="kpi-lab">Total Time Week</div></div>
+        <div class="card"><div class="kpi-val" id="wDeep">0</div><div class="kpi-lab">Deep Sprints Week</div></div>
+        <div class="card"><div class="kpi-val" id="wAvg">0m</div><div class="kpi-lab">Avg / Day</div></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><span class="card-title">Category Breakdown — Week</span><span class="card-sub">graph time per category 7d</span></div>
+        <div id="weekCatChart" class="grid" style="gap:2px"></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><span class="card-title">Last 7 Days Log</span><button class="btn small ghost" onclick="clearWeek()">Clear Data</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Tasks Done</th><th>Total Time</th><th>Categories</th><th>Win</th></tr></thead><tbody id="weekTable"></tbody></table></div>
+      </div>
+      <div class="card" style="margin-top:14px"><div class="card-title">Weekly Review</div><textarea id="weeklyReview" placeholder="What produced €? What drained? What to cut? Top ICE?" style="margin-top:10px;min-height:110px" oninput="saveSettings()"></textarea></div>
+    </div>
+
+    <!-- SCIENCE -->
+    <div class="view" id="view-science">
+      <div class="card"><h2 style="margin:0;font-size:22px">The Science</h2><p style="color:var(--text2);font-size:13px;line-height:1.6">Time chunking + task tracking = attention residue reduction (Leroy 2009) + ultradian rhythm alignment (Kleitman 1963). Tracking per task makes deep work visible.</p>
+      <div class="grid grid-2" style="margin-top:14px">
+        <div style="padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)"><div style="font-family:var(--mono);font-size:10px;color:var(--accent);text-transform:uppercase;font-weight:700">Time Chunking</div><div style="font-size:13px;margin-top:6px;line-height:1.6;color:var(--text2)">Naming a task + preset duration reduces decision fatigue (Baumeister). One chunk = one outcome = less switching cost (23m15s per interruption, Mark).</div></div>
+        <div style="padding:14px;background:var(--surface2);border-radius:12px;border:1px solid var(--border)"><div style="font-family:var(--mono);font-size:10px;color:var(--accent);text-transform:uppercase;font-weight:700">Category Tracking</div><div style="font-size:13px;margin-top:6px;line-height:1.6;color:var(--text2)">Visualizing time by category shows 40/60 build vs distribution balance. What gets measured gets managed. Solo devs over-index build.</div></div>
+      </div></div>
+    </div>
+  </main>
+
+  <div class="mobile-nav" id="mobileNav">
+    <div class="mobile-nav-inner">
+      <div class="mnav-item active" data-view="today"><span class="mnav-ico">📅</span><span class="mnav-label">Today</span></div>
+      <div class="mnav-item" data-view="timer"><span class="mnav-ico">⏱️</span><span class="mnav-label">Timer</span></div>
+      <div class="mnav-item" data-view="inbox"><span class="mnav-ico">📥</span><span class="mnav-label">Inbox</span></div>
+      <div class="mnav-item" data-view="weekly"><span class="mnav-ico">📊</span><span class="mnav-label">Week</span></div>
+      <div class="mnav-item" data-view="science"><span class="mnav-ico">🧬</span><span class="mnav-label">Info</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="shutdownModal">
+  <div class="modal-card"><h3 style="margin:0 0 6px">🌙 Shutdown Ritual</h3><p style="margin:0;color:var(--text2);font-size:13px">Close loops to kill rumination.</p>
+    <div style="margin-top:14px;display:grid;gap:10px;font-size:13.5px">
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" style="width:18px;height:18px"> Inbox cleared?</label>
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" style="width:18px;height:18px"> Tomorrow's 3 MITs set?</label>
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" style="width:18px;height:18px"> Tomorrow's tasks created (time chunks)?</label>
+      <label style="display:flex;gap:10px;align-items:center"><input type="checkbox" style="width:18px;height:18px"> Tabs closed?</label>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn primary" style="flex:1" onclick="completeShutdown()">Complete 🔒</button><button class="btn ghost" onclick="document.getElementById('shutdownModal').classList.remove('active')">Later</button></div>
+  </div>
+</div>
+
+<canvas class="confetti" id="confetti"></canvas>
+
+<script>
+const todayKey = () => new Date().toISOString().slice(0,10);
+const CATEGORIES = {
+  deep:{name:'Deep Build', color:'#a3e635', icon:'🟢'},
+  distribution:{name:'Distribution', color:'#60a5fa', icon:'🔵'},
+  bugfix:{name:'Bug Fix', color:'#f87171', icon:'🔴'},
+  shallow:{name:'Shallow Admin', color:'#facc15', icon:'🟡'},
+  learning:{name:'Learning', color:'#a78bfa', icon:'🟣'},
+  life:{name:'Life', color:'#2dd4bf', icon:'🟢'}
+};
+let data = JSON.parse(localStorage.getItem('mikeos_v2')||'{"days":{},"inbox":[],"ice":[],"settings":{}}');
+function saveStore(){ localStorage.setItem('mikeos_v2', JSON.stringify(data)); }
+let timer = { secs:25*60, total:25*60, running:false, interval:null, mode:'work', activeTaskId:null, startStamp:null };
+
+const blocksDef = [
+  {id:'foundation', time:'07:30-08:30', title:'FOUNDATION — Sunlight, breakfast', meta:'No screen • map tasks'},
+  {id:'sprint1', time:'08:30-10:00', title:'SPRINT 1 — Deep Build chunk', meta:'90 min = 1-2 tasks'},
+  {id:'recovery1', time:'10:00-10:20', title:'RECOVERY 1', meta:'Walk, water'},
+  {id:'sprint2', time:'10:20-11:50', title:'SPRINT 2 — Distribution chunk', meta:'Marketing / outreach'},
+  {id:'shallow', time:'11:50-13:00', title:'SHALLOW + MOVE', meta:'Admin + move'},
+  {id:'sprint3', time:'13:00-14:30', title:'SPRINT 3 — Build / Fix', meta:'Build chunk'},
+  {id:'recovery2', time:'14:30-15:00', title:'RECOVERY 2', meta:'NSDR'},
+  {id:'buffer', time:'15:00-17:00', title:'BUFFER', meta:'Learning'},
+  {id:'life', time:'17:00-18:30', title:'LIFE', meta:'Gym, social'},
+  {id:'shutdown', time:'18:30-19:00', title:'SHUTDOWN', meta:'Plan tomorrow tasks'},
+];
+
+function init(){
+  document.getElementById('todayStr').textContent = new Date().toLocaleDateString('en-SI',{weekday:'long', day:'numeric', month:'long'});
+  renderBlocks(); loadDay(); renderInbox(); renderICE(); renderWeekly();
+  clockTick(); setInterval(clockTick,1000);
+  setupNav(); setupMobileNav();
+  document.getElementById('menuBtn').addEventListener('click', toggleNav);
+  if(data.settings.weeklyReview) document.getElementById('weeklyReview').value = data.settings.weeklyReview;
+  document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); document.getElementById('quickCapture').focus(); }
+    if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){ addTask(); }
+  });
+}
+function setupNav(){
+  document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+    el.addEventListener('click',()=>{ switchView(el.dataset.view); if(window.innerWidth<=900) closeNav(); });
+  });
+}
+function setupMobileNav(){
+  document.querySelectorAll('.mnav-item[data-view]').forEach(el=>{ el.addEventListener('click',()=>switchView(el.dataset.view)); });
+}
+function switchView(view){
+  document.querySelectorAll('.nav-item[data-view]').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
+  document.querySelectorAll('.mnav-item[data-view]').forEach(x=>x.classList.remove('active'));
+  document.querySelector(`.mnav-item[data-view="${view}"]`)?.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  if(view==='weekly') renderWeekly();
+  document.querySelector('main').scrollTo(0,0);
+}
+function toggleNav(){ const sb=document.getElementById('sidebar'); sb.classList.toggle('open'); document.getElementById('overlay').classList.toggle('show', sb.classList.contains('open')); }
+function closeNav(){ document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
+function clockTick(){
+  const now=new Date(); document.getElementById('clock').textContent=now.toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'});
+  let streak=0; let d=new Date();
+  while(true){
+    const k=d.toISOString().slice(0,10);
+    const day=data.days[k];
+    if(day && (day.win || (day.tasks&&day.tasks.some(t=>t.done)) || day.deepSprints>0)) { streak++; d.setDate(d.getDate()-1);} else break;
+    if(streak>100) break;
+    if(streak>0 && k!==todayKey() && !data.days[k]) break;
+  }
+  document.getElementById('streak').textContent=`🔥 ${streak}`;
+}
+function renderBlocks(){
+  const c=document.getElementById('blocks'); c.innerHTML=blocksDef.map(b=>`
+    <div class="block" id="block-${b.id}" data-id="${b.id}"><div class="block-check" onclick="toggleBlock('${b.id}')">✓</div><div class="block-main"><div class="block-title">${b.title}</div><div class="block-meta">${b.meta}</div></div><div class="block-time">${b.time}</div></div>
+  `).join('');
+}
+function getToday(){ const k=todayKey(); if(!data.days[k]) data.days[k]={mit1:'',mit2:'',mit3:'',moneySpent:0,mrr:0,win:'',blocks:{},quick:[],tasks:[],deepSprints:0,activeTaskId:null}; if(!data.days[k].tasks) data.days[k].tasks=[]; if(!data.days[k].quick) data.days[k].quick=[]; if(!data.days[k].blocks) data.days[k].blocks={}; return data.days[k]; }
+
+function loadDay(){
+  const d=getToday();
+  document.getElementById('mit1').value=d.mit1||''; document.getElementById('mit2').value=d.mit2||''; document.getElementById('mit3').value=d.mit3||'';
+  document.getElementById('win').value=d.win||''; document.getElementById('moneySpent').value=d.moneySpent||''; document.getElementById('mrr').value=d.mrr||'';
+  Object.entries(d.blocks||{}).forEach(([id,val])=>{ const el=document.getElementById('block-'+id); if(el){ if(val) el.classList.add('done'); else el.classList.remove('done'); } });
+  if(d.activeTaskId){ timer.activeTaskId = d.activeTaskId; }
+  renderTasks(); renderCharts(); renderQuick();
+  document.getElementById('timerSprints').textContent=d.deepSprints||0;
+  document.getElementById('timerDeepH').textContent=Math.round((d.tasks.reduce((a,b)=>a+(b.spent||0),0)))+'m';
+  document.getElementById('deepPill').textContent=`${d.deepSprints||0} sprints`;
+  document.getElementById('moneyPill').textContent=`€${d.moneySpent||0}`;
+  saveStore();
+}
+function saveDay(){
+  const d=getToday();
+  d.mit1=document.getElementById('mit1').value; d.mit2=document.getElementById('mit2').value; d.mit3=document.getElementById('mit3').value;
+  d.win=document.getElementById('win').value; d.moneySpent=parseFloat(document.getElementById('moneySpent').value)||0; d.mrr=parseFloat(document.getElementById('mrr').value)||0;
+  saveStore(); renderCharts(); renderWeekly();
+}
+function toggleBlock(id){ const d=getToday(); d.blocks[id]=!d.blocks[id]; const el=document.getElementById('block-'+id); if(d.blocks[id]) el.classList.add('done'); else el.classList.remove('done'); saveStore(); }
+
+// Tasks
+function setPreset(m){ document.getElementById('taskPlanned').value=m; document.querySelectorAll('.preset').forEach(p=>p.classList.toggle('active', parseInt(p.dataset.m)===m)); }
+function addTask(){
+  const name=document.getElementById('taskName').value.trim(); if(!name){ document.getElementById('taskName').focus(); return; }
+  const category=document.getElementById('taskCategory').value;
+  const planned=parseInt(document.getElementById('taskPlanned').value)||25;
+  const d=getToday();
+  d.tasks.push({id:Date.now(), name, category, planned, spent:0, done:false, created:Date.now()});
+  document.getElementById('taskName').value=''; saveStore(); renderTasks(); renderCharts(); renderWeekly();
+}
+function renderTasks(){
+  const d=getToday(); const list=d.tasks;
+  document.getElementById('taskCount').textContent=`${list.filter(t=>!t.done).length} open • ${list.length} total`;
+  document.getElementById('taskList').innerHTML = list.slice().reverse().map(t=>{
+    const cat=CATEGORIES[t.category]||CATEGORIES.deep;
+    const pct = t.planned>0 ? Math.min(100, Math.round((t.spent/t.planned)*100)) : 0;
+    const remaining = Math.max(0, t.planned - t.spent);
+    const isActive = timer.activeTaskId===t.id && timer.running;
+    return `<div class="task-item ${t.done?'done':''} ${timer.activeTaskId===t.id?'active':''}">
+      <div class="task-check" onclick="toggleTaskDone(${t.id})">${t.done?'✓':''}</div>
+      <div class="task-main">
+        <div class="task-name"><span class="cat-dot" style="background:${cat.color}"></span>${t.name} ${isActive?'<span style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-left:6px">● LIVE</span>':''}</div>
+        <div class="task-meta"><span style="color:${cat.color}">${cat.name}</span><span>${t.spent}m / ${t.planned}m</span><span>${remaining}m left</span><span style="opacity:0.7">${pct}%</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+      </div>
+      <div class="task-actions">
+        <button class="btn small primary" onclick="startTask(${t.id})">▶</button>
+        <button class="btn small ghost" onclick="addTime(${t.id},5)">+5</button>
+        <button class="btn small ghost" onclick="deleteTask(${t.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text3);font-size:12.5px;text-align:center;padding:16px">No time chunks yet. Create first task above — e.g. "Build login" 50m Deep Build.</div>';
+  // today total pill
+  const total = list.reduce((a,b)=>a+(b.spent||0),0);
+  document.getElementById('todayTotalPill').textContent = `${total}m tracked`;
+  document.getElementById('kpiTotal').textContent = `${total}m`;
+  const plannedLeft = list.reduce((a,b)=>a+Math.max(0, b.planned - b.spent),0);
+  document.getElementById('kpiRemaining').textContent = `${plannedLeft}m`;
+  const deepTotal = list.filter(t=>t.category==='deep').reduce((a,b)=>a+b.spent,0);
+  document.getElementById('kpiDeep').textContent = `${deepTotal}m`;
+}
+function toggleTaskDone(id){ const d=getToday(); const t=d.tasks.find(x=>x.id===id); if(t) t.done=!t.done; saveStore(); renderTasks(); renderCharts(); renderWeekly(); if(d.tasks.filter(x=>x.done).length===d.tasks.length && d.tasks.length>0) launchConfetti(); }
+function deleteTask(id){ const d=getToday(); d.tasks=d.tasks.filter(x=>x.id!==id); if(timer.activeTaskId===id){ timer.activeTaskId=null; d.activeTaskId=null; resetTimer(); } saveStore(); renderTasks(); renderCharts(); renderWeekly(); }
+function addTime(id, mins){ const d=getToday(); const t=d.tasks.find(x=>x.id===id); if(t){ t.spent+=mins; saveStore(); renderTasks(); renderCharts(); } }
+function clearDoneTasks(){ const d=getToday(); d.tasks=d.tasks.filter(x=>!x.done); saveStore(); renderTasks(); renderCharts(); }
+function resetTodayTasks(){ if(!confirm('Reset spent time for ALL tasks today? Planned stays.')) return; const d=getToday(); d.tasks.forEach(t=>{ t.spent=0; t.done=false; }); saveStore(); renderTasks(); renderCharts(); }
+function startTask(id){
+  const d=getToday(); const t=d.tasks.find(x=>x.id===id); if(!t) return;
+  const remaining = Math.max(1, t.planned - t.spent);
+  const minsToUse = remaining>0? remaining : t.planned;
+  d.activeTaskId=id; timer.activeTaskId=id; saveStore();
+  document.getElementById('currentActiveInfo'); // placeholder
+  startSprint(minsToUse);
+  renderTasks(); renderActiveTaskCard();
+}
+
+function renderCharts(){
+  const d=getToday();
+  // category aggregation
+  const catMap = {}; Object.keys(CATEGORIES).forEach(k=>catMap[k]=0);
+  d.tasks.forEach(t=>{ catMap[t.category]=(catMap[t.category]||0)+(t.spent||0); });
+  const catEntries = Object.entries(catMap).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const maxCat = Math.max(1, ...Object.values(catMap));
+  document.getElementById('catChart').innerHTML = catEntries.length? catEntries.map(([catId, mins])=>{
+    const cat=CATEGORIES[catId]; const w=(mins/maxCat)*100;
+    return `<div class="chart-row"><div class="chart-label"><span class="cat-dot" style="background:${cat.color}"></span>${cat.name}</div><div class="chart-track"><div class="chart-fill" style="width:${w}%;background:${cat.color}"></div></div><div class="chart-val">${mins}m</div></div>`;
+  }).join('') : '<div style="color:var(--text3);font-size:12px">No time tracked yet. Start a task timer.</div>';
+
+  const taskSorted = [...d.tasks].sort((a,b)=> (b.spent||0)-(a.spent||0)).slice(0,8);
+  const maxTask = Math.max(1, ...d.tasks.map(t=>t.spent||0), ...d.tasks.map(t=>t.planned));
+  document.getElementById('taskChart').innerHTML = taskSorted.length? taskSorted.map(t=>{
+    const cat=CATEGORIES[t.category]; const w= (t.spent / maxTask)*100; const wPlanned = (t.planned / maxTask)*100;
+    return `<div class="chart-row"><div class="chart-label" title="${t.name}">${t.name.slice(0,18)}</div><div style="position:relative"><div class="chart-track" style="background:rgba(255,255,255,0.06)"><div class="chart-fill" style="width:${w}%;background:${cat.color};position:relative;z-index:2"></div><div class="chart-fill" style="width:${wPlanned}%;background:${cat.color};opacity:0.18;position:absolute;top:0;left:0;height:100%"></div></div><div style="font-size:9px;font-family:var(--mono);color:var(--text3);margin-top:2px">${t.spent}m / ${t.planned}m ${t.done?'✓':''}</div></div><div class="chart-val">${t.spent}m</div></div>`;
+  }).join('') : '<div style="color:var(--text3);font-size:12px">Tasks will appear here after you track time.</div>';
+}
+
+function renderActiveTaskCard(){
+  const d=getToday(); const t=d.tasks.find(x=>x.id===timer.activeTaskId);
+  const el=document.getElementById('activeTaskCard');
+  if(!t){ el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:8px">No active task. Create and start a chunk in Today.</div>'; document.getElementById('activeTaskSub').textContent='none selected'; return; }
+  const cat=CATEGORIES[t.category];
+  document.getElementById('activeTaskSub').textContent=`${cat.name} • ${t.spent}m / ${t.planned}m`;
+  el.innerHTML=`<div style="display:flex;gap:12px;align-items:center"><div style="width:12px;height:12px;border-radius:50%;background:${cat.color};box-shadow:0 0 10px ${cat.color}"></div><div style="flex:1"><div style="font-weight:700">${t.name}</div><div style="font-size:11px;font-family:var(--mono);color:var(--text3)">${cat.name} • ${t.planned - t.spent}m remaining • ${Math.round((t.spent/t.planned)*100)}% done</div><div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,(t.spent/t.planned)*100)}%;background:${cat.color}"></div></div></div><button class="btn small" onclick="pauseTimer()">⏸</button></div>`;
+}
+
+// Quick capture
+function addQuick(){ const input=document.getElementById('quickCapture'); const text=input.value.trim(); if(!text) return; const d=getToday(); d.quick.push({id:Date.now(), text, done:false}); input.value=''; saveStore(); renderQuick(); }
+function renderQuick(){ const d=getToday(); const list=d.quick||[]; document.getElementById('quickList').innerHTML=list.slice().reverse().map(i=>`<div class="inbox-item ${i.done?'done':''}" style="margin-bottom:6px"><input type="checkbox" ${i.done?'checked':''} onchange="toggleQuick(${i.id})" style="width:20px;min-height:auto"><div style="flex:1;font-size:13px">${i.text}</div><button class="btn small ghost" onclick="delQuick(${i.id})">✕</button></div>`).join('') || '<div style="color:var(--text3);font-size:12px;padding:8px;text-align:center">Brain dump here — Ctrl+K</div>'; }
+function toggleQuick(id){ const d=getToday(); const it=d.quick.find(x=>x.id===id); if(it) it.done=!it.done; saveStore(); renderQuick(); }
+function delQuick(id){ const d=getToday(); d.quick=d.quick.filter(x=>x.id!==id); saveStore(); renderQuick(); }
+
+// Timer
+function startSprint(mins){
+  const d=getToday();
+  document.getElementById('timerTask').textContent = (d.tasks.find(x=>x.id===timer.activeTaskId)?.name || 'Time chunk') + ` • ${mins}m`;
+  document.getElementById('timerLabel').textContent = mins>=50? 'DEEP CHUNK — ONE OUTCOME': 'CHUNK — FOCUS';
+  timer.total=mins*60; timer.secs=mins*60; timer.mode=mins>=20?'work':'break'; timer.running=true; timer.startStamp=Date.now();
+  document.getElementById('timerState').textContent=timer.mode.toUpperCase();
+  if(timer.interval) clearInterval(timer.interval); timer.interval=setInterval(tick,1000); tick();
+  if(Notification && Notification.permission!=='denied') Notification.requestPermission();
+  renderActiveTaskCard();
+}
+function startTimerFromActive(){
+  const d=getToday(); if(!d.activeTaskId && d.tasks.length>0) { startTask(d.tasks[d.tasks.length-1].id); return; }
+  const t=d.tasks.find(x=>x.id===d.activeTaskId); if(!t){ alert('Create and select a task first in Today'); return; }
+  const remaining = Math.max(1, t.planned - t.spent); startSprint(remaining);
+}
+function tick(){
+  if(!timer.running) return;
+  timer.secs--; 
+  // live update spent for active task per minute? per second fractional
+  if(timer.activeTaskId){
+    const d=getToday(); const t=d.tasks.find(x=>x.id===timer.activeTaskId);
+    if(t && timer.mode==='work'){
+      // add 1/60 min per second
+      if(timer.secs % 5 === 0){ // update every 5s to reduce writes
+        t.spent = Math.round((t.spent + (1/60))*100)/100; // keep float but display round
+        // Actually simpler keep float but for render round
+      } else {
+        t.spent += 1/60;
+      }
+      if(Math.floor(timer.total - timer.secs) % 10 ===0){ saveStore(); renderTasks(); renderCharts(); renderActiveTaskCard(); }
+    }
+  }
+  if(timer.secs<=0){ completeTimer(); return; }
+  renderTimer();
+}
+function renderTimer(){
+  const m=Math.floor(timer.secs/60); const s=timer.secs%60;
+  document.getElementById('timerDisplay').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('timerBar').style.width=((timer.total-timer.secs)/timer.total)*100+'%';
+}
+function pauseTimer(){ timer.running=!timer.running; document.getElementById('timerState').textContent=timer.running?'RUNNING':'PAUSED'; if(!timer.running){ saveStore(); } else { if(!timer.interval) timer.interval=setInterval(tick,1000); } }
+function resetTimer(){ clearInterval(timer.interval); timer.secs=timer.total; timer.running=false; renderTimer(); document.getElementById('timerState').textContent='IDLE'; document.getElementById('timerBar').style.width='0%'; saveStore(); renderTasks(); renderCharts(); }
+function completeTimer(){
+  clearInterval(timer.interval); timer.running=false; document.getElementById('timerDisplay').textContent='00:00'; document.getElementById('timerBar').style.width='100%';
+  try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); o.frequency.value=660; o.connect(ctx.destination); o.start(); setTimeout(()=>o.stop(),400);}catch(e){}
+  if(timer.mode==='work'){
+    const d=getToday(); d.deepSprints=(d.deepSprints||0)+1;
+    const t=d.tasks.find(x=>x.id===timer.activeTaskId);
+    if(t){
+      // finalize spent to at least planned? Round
+      t.spent = Math.round(t.spent);
+      if(t.spent>=t.planned) t.done=true;
+    }
+    saveStore(); renderTasks(); renderCharts(); loadDay(); renderActiveTaskCard();
+    if(d.deepSprints>=3) launchConfetti();
+  }
+}
+function enterFocus(){ switchView('timer'); }
+
+// Inbox & ICE
+function addInbox(){ const text=document.getElementById('inboxInput').value.trim(); if(!text) return; const type=document.getElementById('inboxType').value; data.inbox.push({id:Date.now(), text, type, done:false, created:todayKey()}); document.getElementById('inboxInput').value=''; saveStore(); renderInbox(); }
+function renderInbox(){
+  document.getElementById('inboxCount').textContent=`${data.inbox.filter(i=>!i.done).length} open`;
+  document.getElementById('inboxList').innerHTML=data.inbox.slice().reverse().map(i=>`
+    <div class="inbox-item ${i.done?'done':''}"><input type="checkbox" ${i.done?'checked':''} onchange="toggleInbox(${i.id})" style="width:20px;min-height:auto"><div style="flex:1"><div style="font-size:13px">${i.text}</div><div style="font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px">${i.type.toUpperCase()} • ${i.created}</div></div><button class="btn small ghost" onclick="deleteInbox(${i.id})">✕</button></div>
+  `).join('') || '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px">Empty inbox = clear mind.</div>';
+}
+function toggleInbox(id){ const it=data.inbox.find(x=>x.id===id); if(it) it.done=!it.done; saveStore(); renderInbox(); }
+function deleteInbox(id){ data.inbox=data.inbox.filter(x=>x.id!==id); saveStore(); renderInbox(); }
+function addICE(){ const name=document.getElementById('iceName').value.trim(); if(!name) return; const I=parseInt(document.getElementById('iceI').value)||5, C=parseInt(document.getElementById('iceC').value)||5, E=parseInt(document.getElementById('iceE').value)||5; const score=Math.round((I*C*E)/10); data.ice.push({id:Date.now(), name, I,C,E,score}); document.getElementById('iceName').value=''; saveStore(); renderICE(); }
+function renderICE(){
+  const sorted=[...data.ice].sort((a,b)=>b.score-a.score);
+  document.getElementById('iceList').innerHTML=sorted.map(i=>`<div class="inbox-item" style="border-left:3px solid ${i.score>60?'var(--accent)':i.score>30?'var(--yellow)':'var(--red)'}"><div style="flex:1"><div style="font-size:13.5px;font-weight:650">${i.name} <span style="font-family:var(--mono);font-size:11px;background:var(--surface3);padding:2px 7px;border-radius:6px;margin-left:6px;border:1px solid var(--border)">${i.score}</span></div><div style="font-size:11px;color:var(--text3);font-family:var(--mono)">I:${i.I} C:${i.C} E:${i.E} • ${i.score>=70?'BUILD NOW':i.score>=40?'MAYBE':'KILL'}</div></div><button class="btn small ghost" onclick="delICE(${i.id})">✕</button></div>`).join('') || '<div style="color:var(--text3);font-size:12px;text-align:center;padding:10px">Add app ideas → highest ICE = build now.</div>';
+}
+function delICE(id){ data.ice=data.ice.filter(x=>x.id!==id); saveStore(); renderICE(); }
+
+// Weekly
+function renderWeekly(){
+  let totalWeek=0; let catWeek={}; Object.keys(CATEGORIES).forEach(k=>catWeek[k]=0);
+  let html='';
+  for(let i=6;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i); const k=d.toISOString().slice(0,10); const day=data.days[k];
+    if(day && day.tasks && day.tasks.length){
+      const dayTotal = day.tasks.reduce((a,b)=>a+(b.spent||0),0); totalWeek+=dayTotal;
+      day.tasks.forEach(t=>{ catWeek[t.category]=(catWeek[t.category]||0)+(t.spent||0); });
+      const catStr = Object.entries(catWeek).filter(([,v])=>v>0).length? '' : '';
+      // per day top category
+      const topCat = (()=>{ let max=0, name=''; day.tasks.forEach(t=>{ if(t.spent>max){ max=t.spent; name=CATEGORIES[t.category]?.name||''; }}); return name; })();
+      html+=`<tr><td style="font-family:var(--mono);font-size:12px">${k}</td><td>${day.tasks.filter(t=>t.done).length}/${day.tasks.length} tasks</td><td>${dayTotal}m</td><td>${day.tasks.map(t=>`${CATEGORIES[t.category]?.icon||''} ${t.spent}m`).join(', ').slice(0,80)}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${day.win||''}</td></tr>`;
+    } else {
+      html+=`<tr style="opacity:0.45"><td style="font-family:var(--mono);font-size:12px">${k}</td><td>-</td><td>0m</td><td style="color:var(--text3)">No tasks</td><td></td></tr>`;
+    }
+  }
+  document.getElementById('wTotal').textContent= totalWeek+'m';
+  document.getElementById('wDeep').textContent= (data.days[todayKey()]?.deepSprints||0)+' today';
+  document.getElementById('wAvg').textContent= Math.round(totalWeek/7)+'m/day';
+  document.getElementById('weekTable').innerHTML=html;
+
+  const maxCat = Math.max(1, ...Object.values(catWeek));
+  document.getElementById('weekCatChart').innerHTML = Object.entries(catWeek).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]).map(([catId, mins])=>{
+    const cat=CATEGORIES[catId]; const w=(mins/maxCat)*100;
+    return `<div class="chart-row"><div class="chart-label"><span class="cat-dot" style="background:${cat.color}"></span>${cat.name}</div><div class="chart-track"><div class="chart-fill" style="width:${w}%;background:${cat.color}"></div></div><div class="chart-val">${mins}m</div></div>`;
+  }).join('') || '<div style="color:var(--text3);font-size:12px">No tasks this week yet.</div>';
+}
+function clearWeek(){ if(confirm('Delete ALL local data? Export first!')){ localStorage.removeItem('mikeos_v2'); data={days:{},inbox:[],ice:[],settings:{}}; location.reload(); } }
+function saveSettings(){ data.settings.weeklyReview=document.getElementById('weeklyReview').value; saveStore(); }
+function showShutdown(){ document.getElementById('shutdownModal').classList.add('active'); }
+function completeShutdown(){ document.getElementById('shutdownModal').classList.remove('active'); const d=getToday(); d.blocks.shutdown=true; saveStore(); renderBlocks(); launchConfetti(); }
+function exportData(){ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`mike-os-${todayKey()}.json`; a.click(); URL.revokeObjectURL(url); }
+function launchConfetti(){
+  const c=document.getElementById('confetti'); c.style.display='block'; const ctx=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight;
+  const particles=[]; for(let i=0;i<100;i++) particles.push({x:c.width/2,y:c.height/2,vx:(Math.random()-0.5)*12,vy:(Math.random()-0.5)*12-3,r:Math.random()*5+2,color:`hsl(${80+Math.random()*40},100%,60%)`});
+  let f=0; (function draw(){ if(f++>110){ c.style.display='none'; return; } ctx.clearRect(0,0,c.width,c.height); particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vy+=0.26; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); }); requestAnimationFrame(draw); })();
+}
+window.onload=init;
+</script>
+</body>
+</html>
